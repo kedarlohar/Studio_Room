@@ -1,0 +1,1393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>CC Machine Room</title>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="CC Machine Room"/>
+<meta name="theme-color" content="#0f1117"/>
+<link rel="manifest" href="data:application/json,{&quot;name&quot;:&quot;CC Machine Room&quot;,&quot;short_name&quot;:&quot;MR&quot;,&quot;display&quot;:&quot;standalone&quot;,&quot;background_color&quot;:&quot;#0f1117&quot;,&quot;theme_color&quot;:&quot;#0f1117&quot;,&quot;start_url&quot;:&quot;.&quot;,&quot;icons&quot;:[{&quot;src&quot;:&quot;https://pharmacycondomwala.in/wp-content/uploads/2026/04/logo-scaled.png&quot;,&quot;sizes&quot;:&quot;192x192&quot;,&quot;type&quot;:&quot;image/png&quot;}]}"/>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+:root{
+  --bg:#0f1117;--card:#1a1d27;--card2:#21253a;--card3:#171b26;
+  --teal:#2cffd0;--teal2:#0fb89a;
+  --teal-dim:rgba(44,255,208,0.08);--teal-glow:rgba(44,255,208,0.2);
+  --orange:#ff9f43;--orange-dim:rgba(255,159,67,0.1);
+  --text:#fff;--text2:#8a8fa8;--text3:#4a4f6a;
+  --red:#ff5c7a;--yellow:#ffd166;--blue:#60a5fa;--purple:#a78bfa;--green:#4ade80;
+  --border:rgba(255,255,255,0.06);--radius:22px;--radius-sm:14px;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;
+  background:radial-gradient(ellipse at 20% 0%,rgba(255,159,67,0.05),transparent 50%),
+             radial-gradient(ellipse at 80% 90%,rgba(44,255,208,0.04),transparent 50%);
+  pointer-events:none;z-index:0;}
+
+/* ── LAYOUT ── */
+.app{position:relative;z-index:1;max-width:430px;margin:0 auto;min-height:100vh;padding-bottom:100px;}
+.page{display:none;}
+.page.active{display:block;}
+
+/* ── HEADER ── */
+.header{padding:50px 22px 16px;display:flex;align-items:flex-start;justify-content:space-between;}
+.greeting{font-size:12px;color:var(--text2);margin-bottom:3px;}
+.greeting span{color:var(--orange);font-weight:600;}
+.header-title{font-size:24px;font-weight:800;letter-spacing:-0.5px;}
+.header-sub{font-size:11px;color:var(--text2);margin-top:2px;}
+
+/* ── CONN BAR ── */
+.conn-bar{margin:0 20px 14px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 14px;display:flex;align-items:center;gap:9px;}
+.conn-bar-dot{width:7px;height:7px;border-radius:50%;background:var(--text3);flex-shrink:0;transition:all 0.3s;}
+.conn-bar-dot.on{background:var(--teal);box-shadow:0 0 7px var(--teal);animation:dotpulse 2s infinite;}
+.conn-bar-text{font-size:11px;font-weight:500;color:var(--text2);}
+.conn-bar-text span{color:var(--teal);font-weight:600;}
+.conn-time{margin-left:auto;font-size:10px;color:var(--text3);font-weight:500;}
+@keyframes dotpulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
+
+/* ── SENSOR CARD ── */
+.sensor-card{margin:0 20px 16px;background:linear-gradient(135deg,#1a2419,#0f1a14);border:1px solid rgba(44,255,208,0.12);border-radius:var(--radius);padding:18px;position:relative;overflow:hidden;}
+.sensor-card::before{content:'';position:absolute;top:-40px;right:-40px;width:140px;height:140px;background:radial-gradient(circle,rgba(44,255,208,0.1),transparent 70%);pointer-events:none;}
+.sensor-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.sensor-badge{background:rgba(44,255,208,0.12);border:1px solid rgba(44,255,208,0.2);border-radius:9px;padding:5px 11px;font-size:10px;font-weight:700;color:var(--teal);letter-spacing:1px;text-transform:uppercase;}
+.sensor-conn{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text3);}
+.sensor-conn-dot{width:6px;height:6px;border-radius:50%;background:var(--text3);}
+.sensor-conn-dot.on{background:var(--teal);box-shadow:0 0 5px var(--teal);animation:dotpulse 2s infinite;}
+.sensor-vals{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.sensor-val-item{background:rgba(0,0,0,0.2);border-radius:11px;padding:12px 14px;}
+.sv-label{font-size:9px;color:var(--text2);font-weight:600;letter-spacing:0.5px;margin-bottom:5px;text-transform:uppercase;}
+.sv-value{font-size:28px;font-weight:800;line-height:1;color:var(--teal);}
+.sv-value.warn{color:var(--yellow);}
+.sv-value.hot{color:var(--red);}
+.sv-unit{font-size:13px;color:var(--text2);font-weight:400;}
+.sv-sub{font-size:9px;color:var(--text3);margin-top:3px;}
+.sensor-last{font-size:10px;color:var(--text3);margin-top:12px;text-align:right;}
+
+/* ── RFID CARD ── */
+.rfid-card{margin:0 20px 14px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;}
+.rfid-header{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+.rfid-icon{width:44px;height:44px;border-radius:12px;background:rgba(167,139,250,0.12);border:1px solid rgba(167,139,250,0.2);display:flex;align-items:center;justify-content:center;font-size:22px;}
+.rfid-info{flex:1;}
+.rfid-title{font-size:15px;font-weight:700;}
+.rfid-sub{font-size:10px;color:var(--text2);margin-top:2px;}
+.rfid-badge{padding:3px 9px;border-radius:20px;font-size:10px;font-weight:600;}
+.rfid-badge.auth{background:rgba(44,255,208,0.1);color:var(--teal);border:1px solid rgba(44,255,208,0.2);}
+.rfid-badge.deny{background:rgba(255,92,122,0.1);color:var(--red);border:1px solid rgba(255,92,122,0.2);}
+.rfid-badge.idle{background:rgba(255,255,255,0.04);color:var(--text3);border:1px solid var(--border);}
+.rfid-detail{background:rgba(0,0,0,0.2);border-radius:10px;padding:10px 12px;}
+.rfid-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;}
+.rfid-row:last-child{margin-bottom:0;}
+.rfid-lbl{font-size:10px;color:var(--text2);}
+.rfid-val{font-size:10px;font-weight:600;color:var(--text);font-family:monospace;}
+
+/* ── DEVICE CARD ── */
+.mr-device-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin:0 20px 12px;transition:all 0.3s;}
+.mr-device-card.active{border-color:rgba(44,255,208,0.25);background:linear-gradient(135deg,#0d1a10,#111520);}
+.mr-device-card.door-active{border-color:rgba(255,209,102,0.25);background:linear-gradient(135deg,#1a1600,#141310);}
+.mr-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:13px;}
+.mr-icon-name{display:flex;align-items:center;gap:12px;}
+.mr-icon{width:46px;height:46px;border-radius:12px;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;font-size:22px;transition:all 0.3s;}
+.mr-device-card.active .mr-icon{background:rgba(44,255,208,0.12);}
+.mr-device-card.door-active .mr-icon{background:rgba(255,209,102,0.12);}
+.mr-name{font-size:15px;font-weight:700;}
+.mr-sub{font-size:10px;color:var(--text2);margin-top:2px;}
+.mr-pill{display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:20px;font-size:11px;font-weight:600;}
+.mr-pill.on{background:rgba(44,255,208,0.1);color:var(--teal);border:1px solid rgba(44,255,208,0.2);}
+.mr-pill.off{background:rgba(255,255,255,0.04);color:var(--text3);border:1px solid var(--border);}
+.mr-pill.unlocked{background:rgba(255,209,102,0.1);color:var(--yellow);border:1px solid rgba(255,209,102,0.2);}
+.mr-pill.locked{background:rgba(255,255,255,0.04);color:var(--text3);border:1px solid var(--border);}
+.mr-pill-dot{width:5px;height:5px;border-radius:50%;background:currentColor;}
+.mr-pill.on .mr-pill-dot,.mr-pill.unlocked .mr-pill-dot{animation:dotpulse 1.5s infinite;}
+
+/* ── TOGGLE ── */
+.toggle-row{display:flex;align-items:center;justify-content:space-between;background:rgba(0,0,0,0.2);border-radius:10px;padding:11px 14px;}
+.toggle-lbl{font-size:12px;color:var(--text2);}
+.toggle-wrap{position:relative;width:46px;height:25px;flex-shrink:0;}
+.toggle-wrap input{opacity:0;width:0;height:0;position:absolute;}
+.toggle-track{position:absolute;inset:0;background:#2a2f44;border-radius:13px;cursor:pointer;transition:all 0.3s;border:1px solid rgba(255,255,255,0.08);}
+.toggle-thumb{position:absolute;top:3px;left:3px;width:17px;height:17px;background:#5a6080;border-radius:50%;transition:all 0.3s;box-shadow:0 1px 4px rgba(0,0,0,0.3);}
+.toggle-wrap input:checked~.toggle-track{background:var(--teal2);border-color:transparent;}
+.toggle-wrap input:checked~.toggle-thumb{transform:translateX(21px);background:#fff;}
+
+/* ── DOOR SECTION ── */
+.door-info{background:rgba(0,0,0,0.2);border-radius:10px;padding:10px 12px;margin-bottom:11px;}
+.door-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;}
+.door-row:last-child{margin-bottom:0;}
+.door-label{font-size:10px;color:var(--text2);}
+.door-val{font-size:11px;font-weight:600;color:var(--text);}
+.door-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.door-btn{border-radius:12px;padding:13px;border:none;font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:all 0.2s;}
+.door-unlock{background:rgba(44,255,208,0.1);border:1px solid rgba(44,255,208,0.3);color:var(--teal);}
+.door-lock{background:rgba(255,209,102,0.1);border:1px solid rgba(255,209,102,0.3);color:var(--yellow);}
+.door-btn:active{transform:scale(0.95);}
+
+/* ── KEYPAD CARD ── */
+.keypad-card{margin:0 20px 14px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;}
+.keypad-header{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+.keypad-icon{width:44px;height:44px;border-radius:12px;background:rgba(96,165,250,0.1);display:flex;align-items:center;justify-content:center;font-size:22px;}
+.keypad-title{font-size:15px;font-weight:700;}
+.keypad-sub{font-size:10px;color:var(--text2);margin-top:2px;}
+.keypad-status{display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:20px;font-size:11px;font-weight:600;}
+.keypad-status.ok{background:rgba(44,255,208,0.1);color:var(--teal);border:1px solid rgba(44,255,208,0.2);}
+.keypad-status.err{background:rgba(255,92,122,0.1);color:var(--red);border:1px solid rgba(255,92,122,0.2);}
+.keypad-status.idle{background:rgba(255,255,255,0.04);color:var(--text3);border:1px solid var(--border);}
+.keypad-detail{background:rgba(0,0,0,0.2);border-radius:10px;padding:11px 13px;}
+.kp-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;}
+.kp-row:last-child{margin-bottom:0;}
+.kp-lbl{font-size:10px;color:var(--text2);}
+.kp-val{font-size:11px;font-weight:600;color:var(--text);}
+
+/* ── LCD STATUS ── */
+.lcd-card{margin:0 20px 14px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;}
+.lcd-header{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+.lcd-icon{width:44px;height:44px;border-radius:12px;background:rgba(251,191,36,0.1);display:flex;align-items:center;justify-content:center;font-size:22px;}
+.lcd-title{font-size:15px;font-weight:700;}
+.lcd-sub{font-size:10px;color:var(--text2);margin-top:2px;}
+.lcd-display{background:#0a120a;border:2px solid rgba(74,222,128,0.25);border-radius:10px;padding:12px 14px;font-family:monospace;position:relative;overflow:hidden;}
+.lcd-display::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 19px,rgba(74,222,128,0.03) 19px,rgba(74,222,128,0.03) 20px);pointer-events:none;}
+.lcd-line{font-size:14px;font-weight:600;color:#4ade80;letter-spacing:1px;height:22px;overflow:hidden;white-space:nowrap;}
+.lcd-line:first-child{margin-bottom:2px;}
+.lcd-cursor{display:inline-block;width:8px;height:14px;background:#4ade80;animation:blink 1s infinite;vertical-align:bottom;margin-left:1px;}
+@keyframes blink{0%,49%{opacity:1;}50%,100%{opacity:0;}}
+
+/* ── AC REMOTE ── */
+.ac-remote{margin:0 20px;background:linear-gradient(135deg,#11182e,#0d1220);border:1px solid rgba(96,165,250,0.15);border-radius:var(--radius);padding:20px;position:relative;overflow:hidden;}
+.ac-remote::before{content:'';position:absolute;top:-50px;right:-50px;width:160px;height:160px;background:radial-gradient(circle,rgba(96,165,250,0.07),transparent 70%);pointer-events:none;}
+.ac-ir-note{margin:0 20px 14px;background:rgba(255,159,67,0.08);border:1px solid rgba(255,159,67,0.2);border-radius:12px;padding:10px 14px;display:flex;align-items:center;gap:9px;}
+.ac-ir-note-icon{font-size:16px;flex-shrink:0;}
+.ac-ir-note-text{font-size:10px;color:var(--orange);font-weight:500;line-height:1.4;}
+.ac-display{background:rgba(0,0,0,0.3);border-radius:14px;padding:16px;margin-bottom:16px;text-align:center;border:1px solid rgba(96,165,250,0.08);}
+.ac-room-label{font-size:10px;font-weight:700;color:var(--blue);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;}
+.ac-power-status{font-size:13px;font-weight:600;margin-bottom:6px;}
+.ac-power-status.on{color:var(--teal);}
+.ac-power-status.off{color:var(--text3);}
+.ac-temp-big{font-size:56px;font-weight:800;color:var(--blue);line-height:1;margin-bottom:4px;}
+.ac-temp-big.off{color:var(--text3);}
+.ac-set-label{font-size:10px;color:var(--text2);}
+.ac-power-btn{width:100%;padding:13px;border-radius:12px;border:none;font-family:'Outfit',sans-serif;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all 0.2s;margin-bottom:14px;}
+.ac-power-on{background:linear-gradient(135deg,var(--teal),var(--teal2));color:#0a1a1a;}
+.ac-power-off{background:rgba(255,92,122,0.12);border:1px solid rgba(255,92,122,0.3);color:var(--red);}
+.ac-power-btn:active{transform:scale(0.97);}
+.ac-temp-controls{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;}
+.ac-temp-btn{width:54px;height:54px;border-radius:50%;border:1.5px solid rgba(96,165,250,0.25);background:rgba(96,165,250,0.06);color:var(--blue);font-size:24px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;font-family:'Outfit',sans-serif;flex-shrink:0;}
+.ac-temp-btn:active{transform:scale(0.9);background:rgba(96,165,250,0.15);}
+.ac-temp-display{flex:1;text-align:center;}
+.ac-temp-num{font-size:38px;font-weight:800;color:var(--blue);line-height:1;}
+.ac-temp-label{font-size:10px;color:var(--text2);margin-top:3px;}
+.ac-sec-lbl{font-size:10px;font-weight:700;color:var(--text2);letter-spacing:1px;text-transform:uppercase;margin-bottom:9px;}
+.ac-modes{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:14px;}
+.ac-mode-btn{padding:9px 4px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text3);font-size:9px;font-weight:600;cursor:pointer;text-align:center;transition:all 0.2s;font-family:'Outfit',sans-serif;}
+.ac-mode-btn.active{background:var(--teal-dim);border-color:rgba(44,255,208,0.3);color:var(--teal);}
+.ac-mode-icon{font-size:16px;margin-bottom:3px;}
+.ac-fan{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:14px;}
+.ac-fan-btn{padding:8px 4px;border-radius:9px;border:1px solid var(--border);background:var(--card);color:var(--text3);font-size:9px;font-weight:600;cursor:pointer;text-align:center;transition:all 0.2s;font-family:'Outfit',sans-serif;}
+.ac-fan-btn.active{background:rgba(96,165,250,0.1);border-color:rgba(96,165,250,0.3);color:var(--blue);}
+.ac-fan-icon{font-size:14px;margin-bottom:2px;}
+.ac-timer-row{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:16px;}
+.ac-timer-btn{padding:8px 4px;border-radius:9px;border:1px solid var(--border);background:var(--card);color:var(--text3);font-size:9px;font-weight:600;cursor:pointer;text-align:center;transition:all 0.2s;font-family:'Outfit',sans-serif;}
+.ac-timer-btn.active{background:rgba(251,191,36,0.1);border-color:rgba(251,191,36,0.3);color:var(--yellow);}
+.ac-stat-bar{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;background:rgba(0,0,0,0.2);border-radius:10px;padding:11px;}
+.ac-stat-item{text-align:center;}
+.ac-stat-val{font-size:13px;font-weight:700;color:var(--text);}
+.ac-stat-lbl{font-size:9px;color:var(--text3);margin-top:2px;}
+
+/* ── REMINDERS ── */
+.rem-section{margin:0 20px 14px;}
+.rem-spotlight{background:linear-gradient(135deg,#0d1a12,#111820);border:1px solid rgba(44,255,208,0.2);border-radius:var(--radius);padding:16px;margin-bottom:12px;}
+.rem-sp-label{font-size:9px;font-weight:700;color:var(--teal);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;}
+.rem-sp-time{font-size:24px;font-weight:800;color:var(--teal);margin-bottom:4px;}
+.rem-sp-emoji{font-size:18px;margin-bottom:4px;}
+.rem-sp-text{font-size:14px;font-weight:600;margin-bottom:4px;}
+.rem-sp-section{font-size:10px;color:var(--text2);letter-spacing:0.5px;}
+.rem-sp-btns{display:flex;gap:8px;margin-top:12px;}
+.rem-btn{flex:1;padding:10px;border-radius:11px;border:none;font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.2s;}
+.rem-ack{background:rgba(44,255,208,0.12);border:1px solid rgba(44,255,208,0.3);color:var(--teal);}
+.rem-snooze{background:rgba(255,209,102,0.1);border:1px solid rgba(255,209,102,0.25);color:var(--yellow);}
+.rem-btn:active{transform:scale(0.95);}
+.rem-progress{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:12px;}
+.rem-prog-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.rem-prog-title{font-size:13px;font-weight:700;}
+.rem-prog-pct{font-size:20px;font-weight:800;color:var(--teal);}
+.rem-prog-bar-wrap{background:rgba(255,255,255,0.06);border-radius:4px;height:6px;overflow:hidden;margin-bottom:8px;}
+.rem-prog-bar{height:100%;background:linear-gradient(90deg,var(--teal),var(--teal2));border-radius:4px;transition:width 0.5s ease;}
+.rem-prog-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;}
+.rem-stat-item{background:rgba(0,0,0,0.2);border-radius:9px;padding:8px;text-align:center;}
+.rem-stat-val{font-size:16px;font-weight:800;}
+.rem-stat-lbl{font-size:9px;color:var(--text2);margin-top:2px;}
+.rem-list{display:flex;flex-direction:column;gap:6px;}
+.rem-item{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:11px 13px;transition:all 0.2s;}
+.rem-item.active-now{border-color:rgba(44,255,208,0.3);background:linear-gradient(135deg,#0d1a10,#111520);}
+.rem-item.done{opacity:0.4;}
+.rem-check{width:20px;height:20px;border-radius:6px;border:1.5px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.2s;}
+.rem-check.checked{background:var(--teal);border-color:var(--teal);}
+.rem-check.checked::after{content:'✓';color:#000;font-size:11px;font-weight:700;}
+.rem-emoji{font-size:15px;flex-shrink:0;}
+.rem-info{flex:1;min-width:0;}
+.rem-text{font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rem-item.done .rem-text{text-decoration:line-through;color:var(--text3);}
+.rem-meta{font-size:9px;color:var(--text3);margin-top:2px;}
+.rem-time{font-size:10px;font-weight:700;color:var(--teal);flex-shrink:0;}
+.rem-no-active{text-align:center;padding:16px;color:var(--text3);font-size:11px;}
+
+/* ── ACTIVITY LOG ── */
+.log-card{margin:0 20px 14px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;}
+.log-title{font-size:13px;font-weight:700;margin-bottom:11px;display:flex;align-items:center;justify-content:space-between;}
+.log-clear{font-size:10px;color:var(--text3);cursor:pointer;padding:3px 8px;border-radius:7px;border:1px solid var(--border);background:transparent;font-family:'Outfit',sans-serif;}
+.log-list{display:flex;flex-direction:column;gap:5px;max-height:300px;overflow-y:auto;}
+.log-list::-webkit-scrollbar{width:2px;}
+.log-list::-webkit-scrollbar-thumb{background:var(--border);}
+.log-entry{display:flex;align-items:flex-start;gap:9px;padding:8px 10px;border-radius:9px;background:rgba(0,0,0,0.2);}
+.log-dot{width:6px;height:6px;border-radius:50%;margin-top:4px;flex-shrink:0;}
+.log-dot.s{background:var(--teal);}
+.log-dot.w{background:var(--yellow);}
+.log-dot.e{background:var(--red);}
+.log-dot.i{background:var(--blue);}
+.log-ts{font-size:9px;color:var(--text3);flex-shrink:0;margin-top:1px;min-width:52px;}
+.log-msg{font-size:11px;color:var(--text2);flex:1;line-height:1.4;}
+
+/* ── HISTORY LIST ── */
+.hist-card{margin:0 20px 14px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;}
+.hist-list{display:flex;flex-direction:column;gap:6px;max-height:400px;overflow-y:auto;}
+.hist-list::-webkit-scrollbar{width:2px;}
+.hist-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;border-left:3px solid transparent;background:rgba(0,0,0,0.2);}
+.hist-item.unlock{border-left-color:var(--teal);}
+.hist-item.lock{border-left-color:var(--yellow);}
+.hist-info{flex:1;}
+.hist-action{font-size:11px;font-weight:600;}
+.hist-action.unlock{color:var(--teal);}
+.hist-action.lock{color:var(--yellow);}
+.hist-badge{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:8px;font-size:9px;font-weight:600;margin-top:3px;}
+.src-rfid{background:rgba(167,139,250,0.1);color:#a78bfa;border:1px solid rgba(167,139,250,0.2);}
+.src-keypad{background:rgba(96,165,250,0.1);color:var(--blue);border:1px solid rgba(96,165,250,0.2);}
+.src-dashboard{background:rgba(44,255,208,0.1);color:var(--teal);border:1px solid rgba(44,255,208,0.2);}
+.src-autolock{background:rgba(255,209,102,0.1);color:var(--yellow);border:1px solid rgba(255,209,102,0.2);}
+.src-default{background:rgba(255,255,255,0.04);color:var(--text3);border:1px solid var(--border);}
+.hist-time{font-size:10px;color:var(--text2);text-align:right;flex-shrink:0;}
+.hist-empty{text-align:center;padding:20px;color:var(--text3);font-size:11px;}
+
+/* ── SECTION TITLE ── */
+.section-title{padding:0 22px 11px;display:flex;align-items:center;justify-content:space-between;}
+.section-title span{font-size:15px;font-weight:700;}
+.section-title small{font-size:10px;color:var(--text2);}
+
+/* ── RIPPLE ── */
+.ripple{position:absolute;border-radius:50%;background:rgba(44,255,208,0.12);animation:ripple 0.5s ease-out;pointer-events:none;}
+@keyframes ripple{from{transform:scale(0);opacity:1;}to{transform:scale(3);opacity:0;}}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:108px;left:50%;transform:translateX(-50%) translateY(18px);background:rgba(26,29,39,0.97);border:1px solid rgba(44,255,208,0.25);border-radius:50px;padding:9px 20px;font-size:12px;font-weight:600;color:var(--text);backdrop-filter:blur(10px);opacity:0;transition:all 0.3s;z-index:9999;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* ── POPUP (reminder alarm) ── */
+.popup-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:5000;align-items:flex-end;justify-content:center;backdrop-filter:blur(8px);}
+.popup-bg.show{display:flex;}
+.popup-sheet{background:#141926;border:1px solid rgba(44,255,208,0.2);border-radius:24px 24px 0 0;padding:24px 22px 40px;width:100%;max-width:430px;animation:slideUp 0.35s cubic-bezier(0.34,1.56,0.64,1);}
+@keyframes slideUp{from{transform:translateY(100%);}to{transform:none;}}
+.popup-handle{width:38px;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;margin:0 auto 20px;}
+.popup-emoji{font-size:40px;margin-bottom:8px;text-align:center;}
+.popup-time{font-size:32px;font-weight:800;color:var(--teal);text-align:center;margin-bottom:6px;}
+.popup-text{font-size:17px;font-weight:700;text-align:center;margin-bottom:4px;}
+.popup-section{font-size:11px;color:var(--text2);text-align:center;margin-bottom:20px;}
+.popup-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.popup-btn{padding:14px;border-radius:14px;border:none;font-family:'Outfit',sans-serif;font-size:14px;font-weight:700;cursor:pointer;}
+.popup-ack{background:linear-gradient(135deg,var(--teal),var(--teal2));color:#0a1a1a;}
+.popup-snooze{background:rgba(255,209,102,0.12);border:1px solid rgba(255,209,102,0.3);color:var(--yellow);}
+.popup-btn:active{transform:scale(0.97);}
+
+/* ── BOTTOM NAV ── */
+.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;padding:10px 10px 28px;background:rgba(15,17,23,0.97);backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-around;z-index:100;}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:5px 12px;border-radius:10px;transition:all 0.2s;position:relative;}
+.nav-icon{font-size:20px;color:var(--text3);transition:color 0.2s;}
+.nav-label{font-size:9px;font-weight:600;color:var(--text3);transition:color 0.2s;}
+.nav-item.active .nav-icon,.nav-item.active .nav-label{color:var(--teal);}
+.nav-badge{position:absolute;top:2px;right:6px;background:var(--red);color:#fff;font-size:8px;font-weight:700;padding:1px 4px;border-radius:8px;min-width:14px;text-align:center;}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:none;}}
+.anim{animation:fadeUp 0.3s ease both;}
+
+/* ── SCROLL HIDE ── */
+::-webkit-scrollbar{width:2px;}
+::-webkit-scrollbar-thumb{background:var(--border);}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ═══════════════════════════
+     PAGE 1: HOME / OVERVIEW
+═══════════════════════════ -->
+<div class="page active" id="page-home">
+  <div class="header">
+    <div>
+      <div class="greeting">Hey, <span>Kedar!</span></div>
+      <div class="header-title">Machine Room</div>
+      <div class="header-sub" id="homeDate">Loading...</div>
+    </div>
+    <div><img src="https://pharmacycondomwala.in/wp-content/uploads/2026/04/logo-scaled.png" style="height:38px;width:auto;object-fit:contain;border-radius:8px;" alt="CC"/></div>
+  </div>
+
+  <div class="conn-bar">
+    <div class="conn-bar-dot" id="connDot"></div>
+    <div class="conn-bar-text">Firebase: <span id="connText">Connecting...</span></div>
+    <div class="conn-time" id="connTime">--:--:--</div>
+  </div>
+
+  <!-- Sensor -->
+  <div class="sensor-card anim">
+    <div class="sensor-header">
+      <div class="sensor-badge">🌡️ Live Sensors — ESP32</div>
+      <div class="sensor-conn">
+        <div class="sensor-conn-dot" id="espDot"></div>
+        <span id="espStatus">Offline</span>
+      </div>
+    </div>
+    <div class="sensor-vals">
+      <div class="sensor-val-item">
+        <div class="sv-label">Temperature</div>
+        <div class="sv-value" id="tempDisp">--<span class="sv-unit">°C</span></div>
+        <div class="sv-sub" id="tempStatus">Waiting for data</div>
+      </div>
+      <div class="sensor-val-item">
+        <div class="sv-label">Humidity</div>
+        <div class="sv-value" id="humDisp">--<span class="sv-unit">%</span></div>
+        <div class="sv-sub" id="humStatus">Waiting for data</div>
+      </div>
+    </div>
+    <div class="sensor-last">Updated: <span id="sensorLastUpdate">--</span></div>
+  </div>
+
+  <!-- Quick Status Grid -->
+  <div style="margin:0 20px 14px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;">
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px 10px;text-align:center;">
+      <div style="font-size:20px;margin-bottom:5px;">💡</div>
+      <div style="font-size:10px;font-weight:700;margin-bottom:2px;" id="qlLightVal">Off</div>
+      <div style="font-size:9px;color:var(--text3);">Light</div>
+    </div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px 10px;text-align:center;">
+      <div style="font-size:20px;margin-bottom:5px;">❄️</div>
+      <div style="font-size:10px;font-weight:700;margin-bottom:2px;" id="qlACVal">Off</div>
+      <div style="font-size:9px;color:var(--text3);">AC</div>
+    </div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px 10px;text-align:center;">
+      <div style="font-size:20px;margin-bottom:5px;">🚪</div>
+      <div style="font-size:10px;font-weight:700;margin-bottom:2px;" id="qlDoorVal">Locked</div>
+      <div style="font-size:9px;color:var(--text3);">Door</div>
+    </div>
+  </div>
+
+  <!-- Active Reminder Spotlight -->
+  <div class="rem-section">
+    <div class="rem-spotlight" id="homeSpotlight">
+      <div class="rem-sp-label">⚡ Active Reminder</div>
+      <div id="homeNoActive" class="rem-no-active">No active reminder right now</div>
+      <div id="homeActiveRem" style="display:none;">
+        <div class="rem-sp-time" id="homeATime">--:--</div>
+        <div class="rem-sp-emoji" id="homeAEmoji"></div>
+        <div class="rem-sp-text" id="homeAText"></div>
+        <div class="rem-sp-section" id="homeASec"></div>
+        <div class="rem-sp-btns">
+          <button class="rem-btn rem-ack" onclick="doAck()">✓ Done</button>
+          <button class="rem-btn rem-snooze" onclick="doSnooze()">⏱ Snooze</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Door Control -->
+  <div style="margin:0 20px 14px;">
+    <div class="section-title" style="padding:0 0 11px;"><span>Quick Actions</span></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <button class="door-btn door-unlock" style="border-radius:14px;padding:14px;" onclick="ctrlDoor(true)">🔓 Unlock Door</button>
+      <button class="door-btn door-lock" style="border-radius:14px;padding:14px;" onclick="ctrlDoor(false)">🔒 Lock Door</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════
+     PAGE 2: CONTROL
+═══════════════════════════ -->
+<div class="page" id="page-control">
+  <div class="header">
+    <div>
+      <div class="greeting">Live Control</div>
+      <div class="header-title">Devices</div>
+      <div class="header-sub">Machine Room — ESP32</div>
+    </div>
+    <div><img src="https://pharmacycondomwala.in/wp-content/uploads/2026/04/logo-scaled.png" style="height:38px;width:auto;object-fit:contain;border-radius:8px;" alt="CC"/></div>
+  </div>
+
+  <!-- Sensor mini -->
+  <div class="sensor-card" style="padding:14px;">
+    <div class="sensor-vals">
+      <div class="sensor-val-item">
+        <div class="sv-label">Temperature</div>
+        <div class="sv-value" style="font-size:22px;" id="ctrlTemp">--<span class="sv-unit">°C</span></div>
+      </div>
+      <div class="sensor-val-item">
+        <div class="sv-label">Humidity</div>
+        <div class="sv-value" style="font-size:22px;" id="ctrlHum">--<span class="sv-unit">%</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LIGHT -->
+  <div class="mr-device-card anim" id="ctrl-lightCard">
+    <div class="mr-card-header">
+      <div class="mr-icon-name">
+        <div class="mr-icon">💡</div>
+        <div><div class="mr-name">Light</div><div class="mr-sub">Machine Room — Relay</div></div>
+      </div>
+      <div class="mr-pill off" id="ctrl-lightPill"><div class="mr-pill-dot"></div><span id="ctrl-lightTxt">Off</span></div>
+    </div>
+    <div class="toggle-row">
+      <span class="toggle-lbl">Toggle Light</span>
+      <label class="toggle-wrap"><input type="checkbox" id="ctrl-lightTog" onchange="ctrlMR('light',this.checked)"/><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+    </div>
+  </div>
+
+  <!-- AC -->
+  <div class="mr-device-card anim" id="ctrl-acCard" style="animation-delay:0.05s;">
+    <div class="mr-card-header">
+      <div class="mr-icon-name">
+        <div class="mr-icon">❄️</div>
+        <div><div class="mr-name">Air Conditioning</div><div class="mr-sub">Machine Room — Relay + IR</div></div>
+      </div>
+      <div class="mr-pill off" id="ctrl-acPill"><div class="mr-pill-dot"></div><span id="ctrl-acTxt">Off</span></div>
+    </div>
+    <div class="toggle-row">
+      <span class="toggle-lbl">Toggle AC (Relay)</span>
+      <label class="toggle-wrap"><input type="checkbox" id="ctrl-acTog" onchange="ctrlMR('ac',this.checked)"/><div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+    </div>
+  </div>
+
+  <!-- DOOR -->
+  <div class="mr-device-card anim" id="ctrl-doorCard" style="animation-delay:0.1s;">
+    <div class="mr-card-header">
+      <div class="mr-icon-name">
+        <div class="mr-icon">🚪</div>
+        <div><div class="mr-name">Door Lock</div><div class="mr-sub">EM Lock — Auto-lock 5s</div></div>
+      </div>
+      <div class="mr-pill locked" id="ctrl-doorPill"><div class="mr-pill-dot"></div><span id="ctrl-doorTxt">Locked</span></div>
+    </div>
+    <div class="door-info">
+      <div class="door-row"><span class="door-label">Last Action</span><span class="door-val" id="ctrl-lastAction">--</span></div>
+      <div class="door-row"><span class="door-label">Source</span><span id="ctrl-lastSource">--</span></div>
+      <div class="door-row"><span class="door-label">Time</span><span class="door-val" id="ctrl-lastTime" style="color:var(--text2);">--</span></div>
+    </div>
+    <div class="door-btns">
+      <button class="door-btn door-unlock" onclick="ctrlDoor(true)">🔓 Unlock</button>
+      <button class="door-btn door-lock" onclick="ctrlDoor(false)">🔒 Lock</button>
+    </div>
+  </div>
+
+  <!-- RFID -->
+  <div class="rfid-card anim" style="animation-delay:0.15s;">
+    <div class="rfid-header">
+      <div class="rfid-icon">📡</div>
+      <div class="rfid-info">
+        <div class="rfid-title">RFID Reader</div>
+        <div class="rfid-sub">RC522 — Door Access</div>
+      </div>
+      <div class="rfid-badge idle" id="rfidBadge">Idle</div>
+    </div>
+    <div class="rfid-detail">
+      <div class="rfid-row"><span class="rfid-lbl">Last Card UID</span><span class="rfid-val" id="rfidUID">--</span></div>
+      <div class="rfid-row"><span class="rfid-lbl">Card Name</span><span class="rfid-val" id="rfidName" style="font-family:'Outfit',sans-serif;">--</span></div>
+      <div class="rfid-row"><span class="rfid-lbl">Status</span><span class="rfid-val" id="rfidStatus" style="font-family:'Outfit',sans-serif;color:var(--text2);">--</span></div>
+      <div class="rfid-row"><span class="rfid-lbl">Time</span><span class="rfid-val" id="rfidTime" style="font-family:'Outfit',sans-serif;">--</span></div>
+    </div>
+  </div>
+
+  <!-- KEYPAD -->
+  <div class="keypad-card anim" style="animation-delay:0.2s;">
+    <div class="keypad-header">
+      <div class="keypad-icon">⌨️</div>
+      <div>
+        <div class="keypad-title">Keypad 4×4</div>
+        <div class="keypad-sub">PIN-based door access</div>
+      </div>
+      <div class="keypad-status idle" id="keypadBadge">Idle</div>
+    </div>
+    <div class="keypad-detail">
+      <div class="kp-row"><span class="kp-lbl">Last Attempt</span><span class="kp-val" id="kpLastAttempt">--</span></div>
+      <div class="kp-row"><span class="kp-lbl">Result</span><span class="kp-val" id="kpResult" style="color:var(--text2);">--</span></div>
+      <div class="kp-row"><span class="kp-lbl">Time</span><span class="kp-val" id="kpTime">--</span></div>
+    </div>
+  </div>
+
+  <!-- LCD Display -->
+  <div class="lcd-card anim" style="animation-delay:0.25s;">
+    <div class="lcd-header">
+      <div class="lcd-icon">🖥️</div>
+      <div>
+        <div class="lcd-title">LCD 16×2 I2C</div>
+        <div class="lcd-sub">Current display output</div>
+      </div>
+    </div>
+    <div class="lcd-display">
+      <div class="lcd-line" id="lcdLine1">Initializing...  </div>
+      <div class="lcd-line" id="lcdLine2">ColorCast v1.0  <span class="lcd-cursor"></span></div>
+    </div>
+  </div>
+
+  <!-- Log -->
+  <div class="log-card anim" style="animation-delay:0.3s;">
+    <div class="log-title">
+      Activity Log
+      <button class="log-clear" onclick="clearLog()">Clear</button>
+    </div>
+    <div class="log-list" id="logList">
+      <div class="log-entry"><div class="log-dot i"></div><span class="log-ts">--:--:--</span><span class="log-msg">System initializing...</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════
+     PAGE 3: AC REMOTE
+═══════════════════════════ -->
+<div class="page" id="page-ac">
+  <div class="header">
+    <div>
+      <div class="greeting">Smart Remote</div>
+      <div class="header-title">AC Control</div>
+      <div class="header-sub">Machine Room AC</div>
+    </div>
+    <div><img src="https://pharmacycondomwala.in/wp-content/uploads/2026/04/logo-scaled.png" style="height:38px;width:auto;object-fit:contain;border-radius:8px;" alt="CC"/></div>
+  </div>
+
+  <!-- IR Note -->
+  <div class="ac-ir-note">
+    <div class="ac-ir-note-icon">⚠️</div>
+    <div class="ac-ir-note-text">IR codes not yet recorded. Settings are saved to Firebase for when IR receiver is added. AC relay power control is active.</div>
+  </div>
+
+  <div class="ac-remote">
+    <!-- Display -->
+    <div class="ac-display">
+      <div class="ac-room-label">🏭 MACHINE ROOM</div>
+      <div class="ac-power-status off" id="acPowerStatus">● STANDBY</div>
+      <div class="ac-temp-big off" id="acTempBig">--°</div>
+      <div class="ac-set-label">Set Temperature</div>
+    </div>
+
+    <!-- Power Btn -->
+    <button class="ac-power-btn" id="acPowerBtn" onclick="toggleAC()">
+      <span id="acPowerIcon">⚡</span>
+      <span id="acPowerTxt">Turn ON</span>
+    </button>
+
+    <!-- Temp -->
+    <div class="ac-sec-lbl">🌡️ Temperature</div>
+    <div class="ac-temp-controls">
+      <button class="ac-temp-btn" onclick="changeACTemp(-1)">−</button>
+      <div class="ac-temp-display">
+        <div class="ac-temp-num" id="acTempNum">24</div>
+        <div class="ac-temp-label">°C (16–30)</div>
+      </div>
+      <button class="ac-temp-btn" onclick="changeACTemp(1)">+</button>
+    </div>
+
+    <!-- Mode -->
+    <div class="ac-sec-lbl">🔄 Mode</div>
+    <div class="ac-modes">
+      <button class="ac-mode-btn active" id="acMode-cool" onclick="setACMode('cool',this)"><div class="ac-mode-icon">❄️</div>Cool</button>
+      <button class="ac-mode-btn" id="acMode-heat" onclick="setACMode('heat',this)"><div class="ac-mode-icon">🔥</div>Heat</button>
+      <button class="ac-mode-btn" id="acMode-fan" onclick="setACMode('fan',this)"><div class="ac-mode-icon">💨</div>Fan</button>
+      <button class="ac-mode-btn" id="acMode-dry" onclick="setACMode('dry',this)"><div class="ac-mode-icon">💧</div>Dry</button>
+    </div>
+
+    <!-- Fan -->
+    <div class="ac-sec-lbl">💨 Fan Speed</div>
+    <div class="ac-fan">
+      <button class="ac-fan-btn" id="acFan-auto" onclick="setACFan('auto',this)"><div class="ac-fan-icon">🔄</div>Auto</button>
+      <button class="ac-fan-btn active" id="acFan-low" onclick="setACFan('low',this)"><div class="ac-fan-icon">🌬️</div>Low</button>
+      <button class="ac-fan-btn" id="acFan-med" onclick="setACFan('med',this)"><div class="ac-fan-icon">💨</div>Med</button>
+      <button class="ac-fan-btn" id="acFan-high" onclick="setACFan('high',this)"><div class="ac-fan-icon">🌪️</div>High</button>
+    </div>
+
+    <!-- Timer -->
+    <div class="ac-sec-lbl">⏱️ Auto OFF Timer</div>
+    <div class="ac-timer-row">
+      <button class="ac-timer-btn active" id="acTimer-off" onclick="setACTimer(0,this)">Off</button>
+      <button class="ac-timer-btn" id="acTimer-30" onclick="setACTimer(30,this)">30m</button>
+      <button class="ac-timer-btn" id="acTimer-60" onclick="setACTimer(60,this)">1hr</button>
+      <button class="ac-timer-btn" id="acTimer-120" onclick="setACTimer(120,this)">2hr</button>
+    </div>
+
+    <!-- Stat bar -->
+    <div class="ac-stat-bar">
+      <div class="ac-stat-item"><div class="ac-stat-val" id="acStatMode">Cool</div><div class="ac-stat-lbl">Mode</div></div>
+      <div class="ac-stat-item"><div class="ac-stat-val" id="acStatFan">Low</div><div class="ac-stat-lbl">Fan</div></div>
+      <div class="ac-stat-item"><div class="ac-stat-val" id="acStatTimer">Off</div><div class="ac-stat-lbl">Timer</div></div>
+    </div>
+  </div>
+  <div style="height:14px;"></div>
+</div>
+
+<!-- ═══════════════════════════
+     PAGE 4: REMINDERS
+═══════════════════════════ -->
+<div class="page" id="page-reminders">
+  <div class="header">
+    <div>
+      <div class="greeting">ColorCast</div>
+      <div class="header-title">Reminders</div>
+      <div class="header-sub" id="remDate">Daily Schedule</div>
+    </div>
+    <div><img src="https://pharmacycondomwala.in/wp-content/uploads/2026/04/logo-scaled.png" style="height:38px;width:auto;object-fit:contain;border-radius:8px;" alt="CC"/></div>
+  </div>
+
+  <!-- Progress -->
+  <div class="rem-section">
+    <div class="rem-progress">
+      <div class="rem-prog-header">
+        <div class="rem-prog-title">Today's Progress</div>
+        <div class="rem-prog-pct" id="remPct">0%</div>
+      </div>
+      <div class="rem-prog-bar-wrap"><div class="rem-prog-bar" id="remProgBar" style="width:0%"></div></div>
+      <div class="rem-prog-stats">
+        <div class="rem-stat-item"><div class="rem-stat-val" style="color:var(--teal);" id="remDone">0</div><div class="rem-stat-lbl">Done</div></div>
+        <div class="rem-stat-item"><div class="rem-stat-val" style="color:var(--red);" id="remLeft">0</div><div class="rem-stat-lbl">Left</div></div>
+        <div class="rem-stat-item"><div class="rem-stat-val" style="color:var(--yellow);" id="remNext">--</div><div class="rem-stat-lbl">Next</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- List -->
+  <div style="margin:0 20px 14px;">
+    <div class="section-title" style="padding:0 0 11px;"><span>All Reminders</span></div>
+    <div class="rem-list" id="remList"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════
+     PAGE 5: HISTORY
+═══════════════════════════ -->
+<div class="page" id="page-history">
+  <div class="header">
+    <div>
+      <div class="greeting">Access Log</div>
+      <div class="header-title">Door History</div>
+      <div class="header-sub">RFID + Keypad + Dashboard</div>
+    </div>
+    <div><img src="https://pharmacycondomwala.in/wp-content/uploads/2026/04/logo-scaled.png" style="height:38px;width:auto;object-fit:contain;border-radius:8px;" alt="CC"/></div>
+  </div>
+
+  <div style="margin:0 20px 12px;display:flex;flex-wrap:wrap;gap:6px;">
+    <span class="hist-badge src-rfid">📡 RFID</span>
+    <span class="hist-badge src-keypad">⌨️ Keypad</span>
+    <span class="hist-badge src-dashboard">💻 Dashboard</span>
+    <span class="hist-badge src-autolock">⏱ AutoLock</span>
+  </div>
+
+  <div class="hist-card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <span style="font-size:13px;font-weight:700;">Recent Activity</span>
+      <button class="log-clear" onclick="clearHistory()">Clear All</button>
+    </div>
+    <div class="hist-list" id="histList">
+      <div class="hist-empty">No history yet. Unlock to start recording.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── POPUP REMINDER ALARM ── -->
+<div class="popup-bg" id="popup">
+  <div class="popup-sheet">
+    <div class="popup-handle"></div>
+    <div class="popup-emoji" id="popEmoji">🔔</div>
+    <div class="popup-time" id="popTime">--:--</div>
+    <div class="popup-text" id="popText">Reminder</div>
+    <div class="popup-section" id="popSection"></div>
+    <div class="popup-btns">
+      <button class="popup-btn popup-ack" onclick="doAck()">✓ Done</button>
+      <button class="popup-btn popup-snooze" onclick="doSnooze()">⏱ 5 min</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── TOAST ── -->
+<div class="toast" id="toast"></div>
+
+<!-- ── BOTTOM NAV ── -->
+<div class="bottom-nav">
+  <div class="nav-item active" id="nav-home" onclick="showPage('home')">
+    <div class="nav-icon">🏠</div>
+    <div class="nav-label">Home</div>
+  </div>
+  <div class="nav-item" id="nav-control" onclick="showPage('control')">
+    <div class="nav-icon">⚙️</div>
+    <div class="nav-label">Control</div>
+  </div>
+  <div class="nav-item" id="nav-ac" onclick="showPage('ac')">
+    <div class="nav-icon">❄️</div>
+    <div class="nav-label">AC</div>
+  </div>
+  <div class="nav-item" id="nav-reminders" onclick="showPage('reminders')">
+    <div class="nav-icon">🔔</div>
+    <div class="nav-label">Reminders</div>
+    <div class="nav-badge" id="remBadge" style="display:none;"></div>
+  </div>
+  <div class="nav-item" id="nav-history" onclick="showPage('history')">
+    <div class="nav-icon">📋</div>
+    <div class="nav-label">History</div>
+  </div>
+</div>
+
+</div><!-- .app -->
+
+<script>
+// ════ FIREBASE ════
+firebase.initializeApp({
+  apiKey:"AIzaSyD3teBXo9Ajd3aijwfODKyKUEH8ujvx-MQ",
+  authDomain:"colorcast-reminder-6678c.firebaseapp.com",
+  databaseURL:"https://colorcast-reminder-6678c-default-rtdb.firebaseio.com",
+  projectId:"colorcast-reminder-6678c",
+  storageBucket:"colorcast-reminder-6678c.firebasestorage.app",
+  messagingSenderId:"324937632463",
+  appId:"1:324937632463:web:cb5bf0fd56fef08737c5ba"
+});
+
+// Sign in anonymously so Firebase Rules (auth != null) pass
+const db = firebase.database();
+// No auth needed — Firebase Rules set to public read/write
+// If still not connecting: Firebase Console → RTDB → Rules → set .read/.write to true
+
+// ════ NAVIGATION ════
+function showPage(name){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  document.getElementById('nav-'+name).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+let ackedToday=new Set();
+let snoozeMap={};
+let popupRem=null;
+let beepInterval=null;
+let audioCtx=null;
+
+// ════ REMINDERS ════
+const REMINDERS=[
+  {id:'r1', h:9,  m:30, emoji:'🧹', text:'Basic cleaning check',           section:'MORNING'},
+  {id:'r2', h:9,  m:35, emoji:'🤖', text:'Machine room cleaning',          section:'MORNING'},
+  {id:'r3', h:9,  m:40, emoji:'🌡️', text:'Temp & humidity check — log',   section:'MORNING'},
+  {id:'r4', h:9,  m:45, emoji:'⚙️', text:'Machine status check',           section:'MORNING'},
+  {id:'r5', h:9,  m:50, emoji:'📦', text:'Orders check — new + pending',   section:'MORNING'},
+  {id:'r6', h:9,  m:55, emoji:'🎞️', text:'Raw material check',            section:'MORNING'},
+  {id:'r7', h:10, m:0,  emoji:'📋', text:'Set day plan — priority tasks',  section:'MORNING'},
+  {id:'r8', h:10, m:15, emoji:'🖨️', text:'Production start',              section:'PRODUCTION'},
+  {id:'r9', h:11, m:30, emoji:'🔍', text:'Mid-session quality review',     section:'PRODUCTION'},
+  {id:'r10',h:12, m:30, emoji:'💬', text:'Customer replies — WhatsApp',    section:'PRODUCTION'},
+  {id:'r11',h:13, m:30, emoji:'📌', text:'Afternoon prep — orders ready',  section:'PRODUCTION'},
+  {id:'rb', h:14, m:0,  emoji:'🍛', text:'Lunch break',                    section:'BREAK'},
+  {id:'r12',h:15, m:0,  emoji:'⏳', text:'Resume pending work',            section:'AFTERNOON'},
+  {id:'r13',h:16, m:30, emoji:'🆕', text:'New orders + status update',     section:'AFTERNOON'},
+  {id:'r14',h:17, m:0,  emoji:'🌐', text:'Website / product update',       section:'AFTERNOON'},
+  {id:'r15',h:18, m:0,  emoji:'♻️', text:'Material usage — wastage check', section:'AFTERNOON'},
+  {id:'r16',h:18, m:30, emoji:'📝', text:'Day wrap-up — pending list',     section:'AFTERNOON'},
+  {id:'r17',h:19, m:30, emoji:'🧽', text:'Final cleaning',                 section:'CLOSING'},
+  {id:'r18',h:20, m:0,  emoji:'💾', text:'Data backup — orders + designs', section:'CLOSING'},
+  {id:'r19',h:20, m:15, emoji:'📡', text:'Dashboard check — ESP status',   section:'CLOSING'},
+  {id:'r20',h:20, m:30, emoji:'⚡', text:'Electricity usage check',        section:'CLOSING'},
+  {id:'r21',h:20, m:45, emoji:'📊', text:'End-of-day report',              section:'CLOSING'},
+  {id:'r22',h:21, m:0,  emoji:'🔒', text:'Close shop — day complete',      section:'CLOSING'},
+];
+
+// ════ CLOCK ════
+function tick(){
+  const n=new Date();
+  const t=n.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const d=n.toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+  const el=document.getElementById('connTime');if(el)el.textContent=t;
+  const hd=document.getElementById('homeDate');if(hd)hd.textContent=d;
+  const rd=document.getElementById('remDate');if(rd)rd.textContent=d;
+  if(typeof REMINDERS!=='undefined') checkReminders();
+}
+setInterval(tick,1000);tick();
+
+// ════ TOAST ════
+let toastTimer=null;
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  if(toastTimer)clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+
+// ════ FIREBASE CONNECTION ════
+db.ref('.info/connected').on('value',s=>{
+  const on=s.val()===true;
+  const dot=document.getElementById('connDot');
+  const txt=document.getElementById('connText');
+  if(dot){dot.className='conn-bar-dot'+(on?' on':'');}
+  if(txt)txt.textContent=on?'Connected':'Offline';
+  if(on) addLog('Firebase connected','s');
+});
+
+// ════ SENSOR DATA ════
+// Same paths as CC_Dashboard: /MachineRoom/sensors/temperature & /MachineRoom/sensors/humidity
+let _lastTemp=0, _lastHum=0;
+
+function updateSensorUI(temp, hum){
+  ['tempDisp','ctrlTemp'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el)return;
+    el.innerHTML=temp.toFixed(1)+'<span class="sv-unit">°C</span>';
+    el.className='sv-value'+(temp>=35?' hot':temp>=30?' warn':'');
+  });
+  ['humDisp','ctrlHum'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)el.innerHTML=hum.toFixed(0)+'<span class="sv-unit">%</span>';
+  });
+  const tStatus=document.getElementById('tempStatus');
+  const hStatus=document.getElementById('humStatus');
+  if(tStatus)tStatus.textContent=temp>=35?'⚠️ Too Hot':temp>=30?'Warm':'Normal';
+  if(hStatus)hStatus.textContent=hum>=70?'High Humidity':hum<=30?'Dry':'Normal';
+  const espDot=document.getElementById('espDot');
+  const espSt=document.getElementById('espStatus');
+  if(espDot)espDot.className='sensor-conn-dot on';
+  if(espSt)espSt.textContent='Online';
+  const upd=document.getElementById('sensorLastUpdate');
+  if(upd)upd.textContent=new Date().toLocaleTimeString('en-IN');
+  const l1=document.getElementById('lcdLine1');
+  if(l1)l1.textContent=`T:${temp.toFixed(1)}C H:${hum.toFixed(0)}%  `;
+}
+
+db.ref('/MachineRoom/sensors/temperature').on('value',s=>{
+  if(s.val()===null)return;
+  _lastTemp=parseFloat(s.val())||0;
+  updateSensorUI(_lastTemp, _lastHum);
+  addLog(`Temp: ${_lastTemp.toFixed(1)}°C`,'i');
+});
+
+db.ref('/MachineRoom/sensors/humidity').on('value',s=>{
+  if(s.val()===null)return;
+  _lastHum=parseFloat(s.val())||0;
+  updateSensorUI(_lastTemp, _lastHum);
+});
+
+// ════ DEVICE STATUS SYNC ════
+function updDevice(device,on){
+  if(device==='light'){
+    const card=document.getElementById('ctrl-lightCard');
+    const pill=document.getElementById('ctrl-lightPill');
+    const txt=document.getElementById('ctrl-lightTxt');
+    const tog=document.getElementById('ctrl-lightTog');
+    const ql=document.getElementById('qlLightVal');
+    if(card){card.classList.toggle('active',on);}
+    if(pill){pill.className='mr-pill '+(on?'on':'off');}
+    if(txt)txt.textContent=on?'On':'Off';
+    if(tog)tog.checked=on;
+    if(ql){ql.textContent=on?'On':'Off';ql.style.color=on?'var(--teal)':'var(--text3)';}
+  } else if(device==='ac'){
+    const card=document.getElementById('ctrl-acCard');
+    const pill=document.getElementById('ctrl-acPill');
+    const txt=document.getElementById('ctrl-acTxt');
+    const tog=document.getElementById('ctrl-acTog');
+    const ql=document.getElementById('qlACVal');
+    if(card){card.classList.toggle('active',on);}
+    if(pill){pill.className='mr-pill '+(on?'on':'off');}
+    if(txt)txt.textContent=on?'On':'Off';
+    if(tog)tog.checked=on;
+    if(ql){ql.textContent=on?'On':'Off';ql.style.color=on?'var(--teal)':'var(--text3)';}
+    updateACDisplay(on);
+  } else if(device==='door'){
+    const card=document.getElementById('ctrl-doorCard');
+    const pill=document.getElementById('ctrl-doorPill');
+    const txt=document.getElementById('ctrl-doorTxt');
+    const ql=document.getElementById('qlDoorVal');
+    if(card){card.classList.toggle('door-active',on);}
+    if(pill){pill.className='mr-pill '+(on?'unlocked':'locked');}
+    if(txt)txt.textContent=on?'Unlocked':'Locked';
+    if(ql){ql.textContent=on?'Unlocked':'Locked';ql.style.color=on?'var(--yellow)':'var(--text3)';}
+  }
+}
+
+db.ref('/MachineRoom/status/light').on('value',s=>{if(s.val()!==null)updDevice('light',s.val()===true||s.val()===1);});
+db.ref('/MachineRoom/status/ac').on('value',s=>{if(s.val()!==null)updDevice('ac',s.val()===true||s.val()===1);});
+db.ref('/MachineRoom/status/door').on('value',s=>{if(s.val()!==null)updDevice('door',s.val()===true||s.val()===1);});
+
+// ════ DOOR INFO ════
+db.ref('/MachineRoom/door').on('value',s=>{
+  if(!s.val())return;
+  const d=s.val();
+  ['ctrl-lastAction'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=d.lastAction||'--';});
+  ['ctrl-lastTime'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=d.lastTime||'--';});
+  const srcEl=document.getElementById('ctrl-lastSource');
+  if(srcEl){
+    const src=(d.lastSource||'').toLowerCase();
+    let cls='src-default',icon='';
+    if(src==='rfid'){cls='src-rfid';icon='📡 ';}
+    else if(src==='keypad'){cls='src-keypad';icon='⌨️ ';}
+    else if(src==='dashboard'){cls='src-dashboard';icon='💻 ';}
+    else if(src==='autolock'){cls='src-autolock';icon='⏱ ';}
+    srcEl.innerHTML=`<span class="hist-badge ${cls}">${icon}${d.lastSource||'--'}</span>`;
+  }
+  addLog((d.lastAction||'Action')+' via '+(d.lastSource||'?'),'w');
+});
+
+// ════ RFID ════
+db.ref('/MachineRoom/rfid').on('value',s=>{
+  if(!s.val())return;
+  const d=s.val();
+  const el_uid=document.getElementById('rfidUID');
+  const el_name=document.getElementById('rfidName');
+  const el_st=document.getElementById('rfidStatus');
+  const el_time=document.getElementById('rfidTime');
+  const badge=document.getElementById('rfidBadge');
+  if(el_uid)el_uid.textContent=d.uid||'--';
+  if(el_name)el_name.textContent=d.name||'Unknown';
+  if(el_st){
+    const auth=d.authorized===true||d.authorized===1;
+    el_st.textContent=auth?'✓ Authorized':'✗ Denied';
+    el_st.style.color=auth?'var(--teal)':'var(--red)';
+    if(badge){badge.className='rfid-badge '+(auth?'auth':'deny');badge.textContent=auth?'Auth':'Denied';}
+    addLog(`RFID: ${d.name||d.uid||'Unknown'} — ${auth?'Access Granted':'Access Denied'}`, auth?'s':'e');
+  }
+  if(el_time)el_time.textContent=d.time||new Date().toLocaleTimeString('en-IN');
+});
+
+// ════ KEYPAD ════
+db.ref('/MachineRoom/keypad').on('value',s=>{
+  if(!s.val())return;
+  const d=s.val();
+  const la=document.getElementById('kpLastAttempt');
+  const res=document.getElementById('kpResult');
+  const time=document.getElementById('kpTime');
+  const badge=document.getElementById('keypadBadge');
+  if(la)la.textContent=d.lastAttempt||'--';
+  if(time)time.textContent=d.time||'--';
+  if(res){
+    const ok=d.result==='correct'||d.result==='success';
+    res.textContent=ok?'✓ Correct PIN':'✗ Wrong PIN';
+    res.style.color=ok?'var(--teal)':'var(--red)';
+    if(badge){badge.className='keypad-status '+(ok?'ok':'err');badge.textContent=ok?'OK':'Error';}
+    addLog(`Keypad: PIN attempt — ${ok?'Correct':'Wrong'}`,'w');
+  }
+});
+
+// ════ LCD ════
+db.ref('/MachineRoom/lcd').on('value',s=>{
+  if(!s.val())return;
+  const d=s.val();
+  const l1=document.getElementById('lcdLine1');
+  const l2=document.getElementById('lcdLine2');
+  if(d.line1!==undefined&&l1)l1.textContent=String(d.line1).padEnd(16,' ').substring(0,16);
+  if(d.line2!==undefined&&l2)l2.innerHTML=String(d.line2).padEnd(15,' ').substring(0,15)+'<span class="lcd-cursor"></span>';
+});
+
+// ════ DOOR HISTORY ════
+db.ref('/MachineRoom/history').limitToLast(50).on('value',s=>{
+  if(!s.val())return;
+  const list=document.getElementById('histList');
+  if(!list)return;
+  const entries=Object.values(s.val()).reverse();
+  list.innerHTML='';
+  if(entries.length===0){list.innerHTML='<div class="hist-empty">No history yet.</div>';return;}
+  entries.forEach(e=>{
+    const unlock=e.action==='unlock'||(e.action||'').includes('Unlock');
+    const src=(e.source||'dashboard').toLowerCase();
+    let srcCls='src-default',srcIcon='';
+    if(src==='rfid'){srcCls='src-rfid';srcIcon='📡 ';}
+    else if(src==='keypad'){srcCls='src-keypad';srcIcon='⌨️ ';}
+    else if(src==='dashboard'){srcCls='src-dashboard';srcIcon='💻 ';}
+    else if(src==='autolock'){srcCls='src-autolock';srcIcon='⏱ ';}
+    const div=document.createElement('div');
+    div.className='hist-item '+(unlock?'unlock':'lock');
+    div.innerHTML=`
+      <div class="hist-info">
+        <div class="hist-action ${unlock?'unlock':'lock'}">${unlock?'🔓 Unlocked':'🔒 Locked'}</div>
+        <span class="hist-badge ${srcCls}">${srcIcon}${e.source||'Dashboard'}</span>
+      </div>
+      <div class="hist-time">${e.time||'--'}</div>`;
+    list.appendChild(div);
+  });
+});
+
+// ════ CONTROLS ════
+// Write BOTH /control/ (for ESP32) AND /status/ (for CC_Dashboard to read)
+function ctrlMR(device,on){
+  if(device==='light'){
+    db.ref('/MachineRoom/control/light').set(on);
+    db.ref('/MachineRoom/status/light').set(on);
+  }
+  if(device==='ac'){
+    db.ref('/MachineRoom/control/ac').set(on);
+    db.ref('/MachineRoom/status/ac').set(on);
+  }
+  showToast('MR '+device.charAt(0).toUpperCase()+device.slice(1)+' '+(on?'ON':'OFF'));
+  addLog('MR '+device+' → '+(on?'ON':'OFF'),'s');
+}
+function ctrlDoor(unlock){
+  const t=new Date().toLocaleTimeString('en-IN');
+  // Write control (for ESP32) + status (for CC_Dashboard)
+  db.ref('/MachineRoom/control/door').set(unlock);
+  db.ref('/MachineRoom/status/door').set(unlock);
+  // Write door info so CC_Dashboard shows lastAction/Source/Time
+  db.ref('/MachineRoom/door').update({
+    lastAction: unlock?'unlock':'lock',
+    lastSource: 'dashboard',
+    lastTime: t
+  });
+  showToast(unlock?'🔓 Unlocking...':'🔒 Locking...');
+  addLog('Door → '+(unlock?'Unlock':'Lock')+' (Dashboard)','w');
+}
+function clearHistory(){
+  db.ref('/MachineRoom/history').remove();
+  showToast('History cleared');
+}
+
+// ════ AC REMOTE ════
+let acIsOn=false,acTemp=24,acMode='cool',acFan='low',acTimerVal=0,acTimerTimeout=null;
+
+function updateACDisplay(on){
+  acIsOn=on;
+  const st=document.getElementById('acPowerStatus');
+  const tb=document.getElementById('acTempBig');
+  const pb=document.getElementById('acPowerBtn');
+  const pi=document.getElementById('acPowerIcon');
+  const pt=document.getElementById('acPowerTxt');
+  if(st){st.textContent=on?'● ON':'● STANDBY';st.className='ac-power-status '+(on?'on':'off');}
+  if(tb){tb.textContent=on?acTemp+'°':'--°';tb.className='ac-temp-big'+(on?'':' off');}
+  if(pb)pb.className='ac-power-btn '+(on?'ac-power-off':'ac-power-on');
+  if(pi)pi.textContent=on?'⏹':'⚡';
+  if(pt)pt.textContent=on?'Turn OFF':'Turn ON';
+}
+function toggleAC(){
+  const newOn=!acIsOn;
+  db.ref('/MachineRoom/control/ac').set(newOn);
+  db.ref('/MachineRoom/status/ac').set(newOn);  // sync to CC_Dashboard
+  db.ref('/acSettings/machine').set({temp:acTemp,mode:acMode,fan:acFan,on:newOn,ts:Date.now()});
+  updateACDisplay(newOn);
+  showToast('MR AC '+(newOn?'ON':'OFF'));
+  addLog('AC → '+(newOn?'ON':'OFF')+(newOn?' @ '+acTemp+'°C':''),'s');
+}
+function changeACTemp(d){
+  acTemp=Math.min(30,Math.max(16,acTemp+d));
+  document.getElementById('acTempNum').textContent=acTemp;
+  if(acIsOn){document.getElementById('acTempBig').textContent=acTemp+'°';}
+  db.ref('/acSettings/machine/temp').set(acTemp);
+  showToast('Temp: '+acTemp+'°C');
+}
+function setACMode(mode,btn){
+  acMode=mode;
+  document.querySelectorAll('.ac-mode-btn').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  document.getElementById('acStatMode').textContent=mode.charAt(0).toUpperCase()+mode.slice(1);
+  db.ref('/acSettings/machine/mode').set(mode);
+  showToast('Mode: '+mode);
+}
+function setACFan(speed,btn){
+  acFan=speed;
+  document.querySelectorAll('.ac-fan-btn').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  document.getElementById('acStatFan').textContent=speed.charAt(0).toUpperCase()+speed.slice(1);
+  db.ref('/acSettings/machine/fan').set(speed);
+  showToast('Fan: '+speed);
+}
+function setACTimer(mins,btn){
+  acTimerVal=mins;
+  document.querySelectorAll('.ac-timer-btn').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  document.getElementById('acStatTimer').textContent=mins===0?'Off':mins<60?mins+'m':(mins/60)+'hr';
+  if(acTimerTimeout){clearTimeout(acTimerTimeout);acTimerTimeout=null;}
+  if(mins>0){
+    acTimerTimeout=setTimeout(()=>{
+      db.ref('/MachineRoom/control/ac').set(false);
+      updateACDisplay(false);
+      showToast('AC Timer: Auto OFF');
+      addLog('AC Timer: Auto OFF','w');
+    },mins*60*1000);
+    showToast('Timer: '+mins+' min');
+  }
+}
+// Sync AC state
+db.ref('/MachineRoom/status/ac').on('value',s=>{
+  if(s.val()!==null)updateACDisplay(s.val()===true||s.val()===1);
+});
+// Load saved AC settings
+db.ref('/acSettings/machine').once('value',s=>{
+  if(!s.val())return;
+  const d=s.val();
+  if(d.temp)acTemp=d.temp;
+  if(d.mode){
+    acMode=d.mode;
+    document.querySelectorAll('.ac-mode-btn').forEach(b=>b.classList.remove('active'));
+    const mb=document.getElementById('acMode-'+d.mode);if(mb)mb.classList.add('active');
+    document.getElementById('acStatMode').textContent=d.mode.charAt(0).toUpperCase()+d.mode.slice(1);
+  }
+  if(d.fan){
+    acFan=d.fan;
+    document.querySelectorAll('.ac-fan-btn').forEach(b=>b.classList.remove('active'));
+    const fb=document.getElementById('acFan-'+d.fan);if(fb)fb.classList.add('active');
+    document.getElementById('acStatFan').textContent=d.fan.charAt(0).toUpperCase()+d.fan.slice(1);
+  }
+  document.getElementById('acTempNum').textContent=acTemp;
+  updateACDisplay(d.on===true);
+});
+
+// ════ ACTIVITY LOG ════
+const LOG_MAX=50;
+let logEntries=[];
+function addLog(msg,type='i'){
+  const ts=new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  logEntries.unshift({msg,type,ts});
+  if(logEntries.length>LOG_MAX)logEntries.pop();
+  renderLog();
+}
+function renderLog(){
+  const list=document.getElementById('logList');
+  if(!list)return;
+  list.innerHTML=logEntries.map(e=>`
+    <div class="log-entry">
+      <div class="log-dot ${e.type}"></div>
+      <span class="log-ts">${e.ts}</span>
+      <span class="log-msg">${e.msg}</span>
+    </div>`).join('');
+}
+function clearLog(){logEntries=[];renderLog();showToast('Log cleared');}
+
+
+
+
+
+// Load acked from Firebase
+function loadAcked(){
+  const today=new Date().toDateString();
+  db.ref('/reminders/acked/'+today).once('value',s=>{
+    if(s.val()){Object.keys(s.val()).forEach(id=>ackedToday.add(id));}
+    renderReminders();
+  });
+}
+function saveAcked(id){
+  const today=new Date().toDateString();
+  db.ref('/reminders/acked/'+today+'/'+id).set(true);
+}
+
+function fmt12(h,m){
+  const ap=h>=12?'PM':'AM';
+  const hh=h%12||12;
+  return `${hh}:${String(m).padStart(2,'0')} ${ap}`;
+}
+
+function getActive(){
+  const n=new Date();
+  const now=n.getHours()*60+n.getMinutes();
+  return REMINDERS.find(r=>{
+    const rMin=r.h*60+r.m;
+    const key=r.id+'_'+n.toDateString();
+    const snz=snoozeMap[r.id];
+    if(snz&&now<snz)return false;
+    return rMin<=now && rMin>now-2 && !ackedToday.has(key);
+  });
+}
+function getNext(){
+  const n=new Date();
+  const now=n.getHours()*60+n.getMinutes();
+  const future=REMINDERS.filter(r=>{
+    const rMin=r.h*60+r.m;
+    const key=r.id+'_'+n.toDateString();
+    return rMin>now&&!ackedToday.has(key);
+  });
+  if(!future.length)return null;
+  future.sort((a,b)=>(a.h*60+a.m)-(b.h*60+b.m));
+  return future[0];
+}
+
+function checkReminders(){
+  const active=getActive();
+  if(active&&!popupRem){
+    popupRem=active;
+    showPopup(active);
+    startBeep();
+    sendNotif(active);
+  }
+  renderHomeSpotlight(active);
+  renderReminders();
+  updateRemBadge();
+}
+
+function showPopup(r){
+  document.getElementById('popEmoji').textContent=r.emoji;
+  document.getElementById('popTime').textContent=fmt12(r.h,r.m);
+  document.getElementById('popText').textContent=r.text;
+  document.getElementById('popSection').textContent=r.section;
+  document.getElementById('popup').classList.add('show');
+}
+
+function doAck(){
+  if(!popupRem)return;
+  const key=popupRem.id+'_'+new Date().toDateString();
+  ackedToday.add(key);
+  saveAcked(key);
+  document.getElementById('popup').classList.remove('show');
+  stopBeep();
+  popupRem=null;
+  renderReminders();
+  updateRemBadge();
+  showToast('✓ Reminder done!');
+}
+function doSnooze(){
+  if(!popupRem)return;
+  const snoozeMin=5;
+  const n=new Date();
+  snoozeMap[popupRem.id]=n.getHours()*60+n.getMinutes()+snoozeMin;
+  document.getElementById('popup').classList.remove('show');
+  stopBeep();
+  popupRem=null;
+  showToast('⏱ Snoozed 5 min');
+}
+
+function renderHomeSpotlight(active){
+  const noEl=document.getElementById('homeNoActive');
+  const actEl=document.getElementById('homeActiveRem');
+  if(!active){
+    if(noEl)noEl.style.display='block';
+    if(actEl)actEl.style.display='none';
+    return;
+  }
+  if(noEl)noEl.style.display='none';
+  if(actEl)actEl.style.display='block';
+  const t=document.getElementById('homeATime');
+  const e=document.getElementById('homeAEmoji');
+  const tx=document.getElementById('homeAText');
+  const sc=document.getElementById('homeASec');
+  if(t)t.textContent=fmt12(active.h,active.m);
+  if(e)e.textContent=active.emoji;
+  if(tx)tx.textContent=active.text;
+  if(sc)sc.textContent=active.section;
+}
+
+function renderReminders(){
+  const n=new Date();
+  const now=n.getHours()*60+n.getMinutes();
+  const today=n.toDateString();
+  const total=REMINDERS.length;
+  let done=0;
+  const list=document.getElementById('remList');
+  if(!list)return;
+  list.innerHTML='';
+  REMINDERS.forEach(r=>{
+    const key=r.id+'_'+today;
+    const isDone=ackedToday.has(key);
+    const rMin=r.h*60+r.m;
+    const isNow=rMin<=now&&rMin>now-2;
+    if(isDone)done++;
+    const div=document.createElement('div');
+    div.className='rem-item'+(isDone?' done':isNow?' active-now':'');
+    div.innerHTML=`
+      <div class="rem-check${isDone?' checked':''}" onclick="toggleRem('${r.id}')"></div>
+      <div class="rem-emoji">${r.emoji}</div>
+      <div class="rem-info">
+        <div class="rem-text">${r.text}</div>
+        <div class="rem-meta">${r.section}</div>
+      </div>
+      <div class="rem-time">${fmt12(r.h,r.m)}</div>`;
+    list.appendChild(div);
+  });
+  // Progress
+  const pct=Math.round(done/total*100);
+  const pctEl=document.getElementById('remPct');
+  const bar=document.getElementById('remProgBar');
+  const doneEl=document.getElementById('remDone');
+  const leftEl=document.getElementById('remLeft');
+  const nextEl=document.getElementById('remNext');
+  if(pctEl)pctEl.textContent=pct+'%';
+  if(bar)bar.style.width=pct+'%';
+  if(doneEl)doneEl.textContent=done;
+  if(leftEl)leftEl.textContent=total-done;
+  const nxt=getNext();
+  if(nextEl)nextEl.textContent=nxt?fmt12(nxt.h,nxt.m):'Done!';
+}
+
+function toggleRem(id){
+  const key=id+'_'+new Date().toDateString();
+  if(ackedToday.has(key)){ackedToday.delete(key);}
+  else{ackedToday.add(key);saveAcked(key);}
+  renderReminders();updateRemBadge();
+}
+
+function updateRemBadge(){
+  const n=new Date();
+  const now=n.getHours()*60+n.getMinutes();
+  const today=n.toDateString();
+  const active=REMINDERS.filter(r=>{
+    const rMin=r.h*60+r.m;
+    const key=r.id+'_'+today;
+    return rMin<=now&&rMin>now-60&&!ackedToday.has(key);
+  });
+  const badge=document.getElementById('remBadge');
+  if(badge){
+    if(active.length>0){badge.style.display='block';badge.textContent=active.length;}
+    else{badge.style.display='none';}
+  }
+}
+
+// ════ NOTIFICATION ════
+function sendNotif(r){
+  if(Notification.permission!=='granted')return;
+  try{
+    const n=new Notification('⏰ ColorCast Reminder',{
+      body:r.emoji+' '+r.text,
+      tag:'cc-rem',
+      requireInteraction:true
+    });
+    n.onclick=()=>{window.focus();n.close();};
+  }catch(e){}
+}
+if(Notification.permission==='default'){
+  setTimeout(()=>Notification.requestPermission(),3000);
+}
+
+// ════ BEEP ════
+function getACtx(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;}
+function beep(f=880,d=120,v=0.35){
+  try{const c=getACtx(),o=c.createOscillator(),g=c.createGain();
+  o.connect(g);g.connect(c.destination);o.type='sine';o.frequency.value=f;
+  g.gain.setValueAtTime(v,c.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+d/1000);
+  o.start(c.currentTime);o.stop(c.currentTime+d/1000);}catch(e){}
+}
+function startBeep(){stopBeep();beep(880,120);setTimeout(()=>beep(880,120),200);setTimeout(()=>beep(1046,180),400);beepInterval=setInterval(()=>{beep(880,120);setTimeout(()=>beep(880,120),200);setTimeout(()=>beep(1046,180),400);},4000);}
+function stopBeep(){if(beepInterval){clearInterval(beepInterval);beepInterval=null;}}
+
+// ════ RIPPLE ════
+document.addEventListener('click',function(e){
+  const card=e.target.closest('.mr-device-card,.rfid-card,.keypad-card,.lcd-card');
+  if(!card)return;
+  const r=document.createElement('div');r.className='ripple';
+  const rect=card.getBoundingClientRect();
+  const size=Math.max(rect.width,rect.height);
+  r.style.cssText=`width:${size}px;height:${size}px;left:${e.clientX-rect.left-size/2}px;top:${e.clientY-rect.top-size/2}px;position:absolute;`;
+  card.style.overflow='hidden';card.style.position='relative';
+  card.appendChild(r);setTimeout(()=>r.remove(),500);
+});
+
+// ════ PWA ════
+let deferredPrompt=null;
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault();deferredPrompt=e;
+  const btn=document.createElement('button');
+  btn.textContent='📲 Install App';
+  btn.style.cssText='position:fixed;bottom:88px;right:16px;z-index:9998;background:var(--teal);color:#0a1a1a;border:none;border-radius:50px;padding:10px 18px;font-size:12px;font-weight:700;cursor:pointer;font-family:Outfit,sans-serif;box-shadow:0 4px 20px rgba(44,255,208,0.4);';
+  btn.onclick=async()=>{if(!deferredPrompt)return;deferredPrompt.prompt();const r=await deferredPrompt.userChoice;if(r.outcome==='accepted'){btn.remove();deferredPrompt=null;}};
+  document.body.appendChild(btn);
+});
+
+// ════ INIT ════
+loadAcked();
+addLog('Machine Room Dashboard ready','s');
+setInterval(()=>{renderReminders();updateRemBadge();},10000);
+</script>
+</body>
+</html>
